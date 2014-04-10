@@ -38,18 +38,13 @@
 ##   # description: Item for test
 ##   # tags: thing
 ##   # Item #2
-##   # id: item2
-##   # name: personA
-##   # description: Item for test
-##   # tags: thing
-##   # Item #3
 ##   # id: addkey
 ##   # name: addkey
 ##   # owner: bob
 ##   # description: Add a public SSH Key
 ##   # tags: add,ssh,key,thing
 
-import redis, os, parsecfg, strutils, streams, strtabs, sockets, re
+import redis, strutils, strtabs, sockets, re
 
 type
   TRedisDB* = object
@@ -62,7 +57,7 @@ type
   TKeyValPair = tuple[field, value:string]
 
 proc config(db: TRedisDB, data: varargs[string]) =
-  ## Set config values like port and host for redis
+  ## Set config values like port and host for redis.
   var i = 0
   while data.len > 1 and true:
     db.conf[data[i]] = data[i+1]
@@ -71,7 +66,7 @@ proc config(db: TRedisDB, data: varargs[string]) =
       break
 
 proc newRedisDB*(dbname:string, confData:varargs[string]):TRedisDB =
-  ## Only first arg (dbname) is necessary, these are the defaults if the rest aren't specified
+  ## Only first arg (dbname) is necessary, these are the defaults if the rest aren't specified.
   ##   .. code-block:: nimrod
   ##     myDB = newRedisDB("mydbname", "host", "localhost", "port", "6379", 
   ##                       "searchFields", "name,description,tags"
@@ -93,7 +88,7 @@ proc checkInit(db:TRedisDB) =
   var x=1
 
 proc read*(db:TRedisDB, id:string):PStringTable =
-  ## Read hash (stringtable) with a particular id
+  ## Read hash (stringtable) with a particular id.
   var list = db.red.hGetAll db.name&":obj:"&id
   var strTable = newStringTable()
   if not isNil(list):
@@ -104,7 +99,9 @@ proc read*(db:TRedisDB, id:string):PStringTable =
   return strTable
   
 proc checkOwner*(db:TRedisDb, id, val:string):bool =
-  ## Verify that name matches the name in the config
+  ## Verify that val matches the value of the ownerField
+  ## (specified in the config, defaults to 'owner')
+  ## for object with this id.
   var data = db.red.hGet(db.name&":obj:"&id, db.conf["ownerField"])
   if isNil(data):
     return false 
@@ -112,11 +109,11 @@ proc checkOwner*(db:TRedisDb, id, val:string):bool =
     return (data == val)
 
 proc delete*(db:TRedisDB, id:string) =
-  ## Delete object
+  ## Delete object.
   var x = 1
   
 proc listAll*(db:TRedisDB): seq[PStringTable] = 
-  ## List all objects
+  ## List all objects.
   var prefix = db.name & ":obj:"
   var ids = db.red.keys(prefix & "*")
   var list:seq[PStringTable] = @[]
@@ -181,7 +178,7 @@ proc index(db:TRedisDB, id:string, keyvals:PStringTable) =
 
 proc search*(db: TRedisDB, query:string):seq[PStringTable] =
   ## Search for an object with searchFields including all 
-  ## keywords in query (separate with spaces)
+  ## keywords in query (separate with spaces).
   var keywords = query.split(' ')
   var keys:seq[string] = @[]
   for word in keywords:
@@ -191,7 +188,7 @@ proc search*(db: TRedisDB, query:string):seq[PStringTable] =
 
 proc createOrUpdate*(db: TRedisDB, id:string, data:PStringTable) =
   ## Create or update existing fields of an object
-  ## If object with same id exists, only updates fields specified
+  ## If object with same id exists, only updates fields specified.
   checkInit(db)
   for key, val in data:
     var reply = db.red.hSet(db.name&":obj:"&id, key, val)
@@ -200,7 +197,7 @@ proc createOrUpdate*(db: TRedisDB, id:string, data:PStringTable) =
 when isMainModule:
   var myDB = newRedisDB("mydb") 
   var item1 = newStringTable({"name": "personA", "description" : "Item for test",
-                              "tags":"thing", "owner": "bob"},modeCaseInsensitive)
+                              "tags":"thing", "owner": "bob"})
   myDB.createOrUpdate("item2", item1)
   myDB.createOrUpdate("addkey", newStringTable({"name":"addkey", "owner": "tom", "description":
                                  "Add a public SSH Key", "tags": "add,ssh,key,thing"}))
