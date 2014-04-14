@@ -1,0 +1,9 @@
+[Package]
+name          = "rediscrudsearch"
+version       = "0.2.0"
+author        = "Jason Livesay"
+description   = "Simple redis-backed DB with text search"
+license       = "MIT"
+
+[Deps]
+Requires: "nimrod >= 0.9.2, jester >= 0.1"
